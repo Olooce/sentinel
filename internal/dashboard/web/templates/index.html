@@ -8,8 +8,8 @@
           name="description"/>
 
     <link href="/static/skyworld_logo_favicon.png" rel="icon" type="image/png"/>
-    <link href="/static/skyworld_logo_favicon.png" rel="shortcut icon"/>
-    <link href="/static/skyworld_logo_big.png" rel="apple-touch-icon"/>
+<!--    <link href="/static/skyworld_logo_favicon.png" rel="shortcut icon"/>-->
+<!--    <link href="/static/skyworld_logo_big.png" rel="apple-touch-icon"/>-->
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -1907,8 +1907,8 @@
 
     function connectSSE() {
         const es = new EventSource('/api/events');
-        $('sse-dot').classList.remove('disconnected');
-        $('sse-label').textContent = 'SSE';
+        $('status-dot').classList.remove('inactive');
+        $('status-text').textContent = 'Live';
 
         es.onmessage = async ev => {
             const data = JSON.parse(ev.data);
@@ -1943,8 +1943,7 @@
                 }, 50);
             }
 
-            // refresh summary
-            await loadStatus();
+            computeSummary();
 
             // if panel open for this service, update it
             if (state.selectedId === data.service_id) {
@@ -1955,15 +1954,34 @@
         };
 
         es.onerror = () => {
-            $('sse-dot').classList.add('disconnected');
-            $('sse-label').textContent = 'SSE ✕';
+            $('status-dot').classList.add('inactive');
+            $('status-text').textContent = 'Disconnected';
             es.close();
-            // reconnect after 5 s
             setTimeout(connectSSE, 5000);
         };
     }
 
     connectSSE();
+
+
+    function computeSummary() {
+        const total = state.services.length;
+        let appUp = 0, appDown = 0, srvUp = 0, srvDown = 0;
+        for (const s of state.services) {
+            if (s.application_status === 'UP') appUp++;
+            else if (s.application_status === 'DOWN') appDown++;
+            if (s.server_status === 'UP') srvUp++;
+            else if (s.server_status === 'DOWN') srvDown++;
+        }
+        state.summary = {
+            total_services: total,
+            application_up: appUp,
+            application_down: appDown,
+            server_up: srvUp,
+            server_down: srvDown,
+        };
+        updateStatCards(state.summary);
+    }
 
     function toast(msg, type = 'info') {
         const el = document.createElement('div');
