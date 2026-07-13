@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Config>
+    <Services>
+        <Service>
+            <ServiceID>1</ServiceID>
+            <ServiceName>Harambee Members Portal</ServiceName>
+            <ServiceHost>selfservice.harambeesacco.com</ServiceHost>
+            <ServicePort>443</ServicePort>
+            <ServiceResourceURI>/</ServiceResourceURI>
+            <ServiceMethod>GET</ServiceMethod>
+            <MonitoringInterval>10</MonitoringInterval>
+            <MonitoringIntervalUnit>Minutes</MonitoringIntervalUnit>
+            <EnableFileLogging>true</EnableFileLogging>
+            <FileLoggingInterval>Hourly</FileLoggingInterval>
+            <EnableLogsArchiving>true</EnableLogsArchiving>
+            <LogArchivingInterval>Weekly</LogArchivingInterval>
+            <ArchiveFormat>.gzip</ArchiveFormat>
+        </Service>
+        <Service>
+            <ServiceID>2</ServiceID>
+            <ServiceName>Sky World Services Portal</ServiceName>
+            <ServiceHost>portal.skyworld.co.ke</ServiceHost>
+            <ServicePort>443</ServicePort>
+            <ServiceResourceURI>/</ServiceResourceURI>
+            <ServiceMethod>GET</ServiceMethod>
+            <MonitoringInterval>30</MonitoringInterval>
+            <MonitoringIntervalUnit>Seconds</MonitoringIntervalUnit>
+            <EnableFileLogging>false</EnableFileLogging>
+            <FileLoggingInterval>Daily</FileLoggingInterval>
+            <EnableLogsArchiving>false</EnableLogsArchiving>
+            <LogArchivingInterval>Weekly</LogArchivingInterval>
+            <ArchiveFormat>.gzip</ArchiveFormat>
+        </Service>
+    </Services>
+</Config>

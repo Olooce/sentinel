@@ -1,0 +1,322 @@
+services:
+  - service_id: 1
+    service_name: Harambee Members Portal
+    service_host: selfservice.harambeesacco.com
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 10
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Weekly
+    archive_format: .gzip
+
+  - service_id: 2
+    service_name: Sky World Services Portal
+    service_host: portal.skyworld.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 30
+    monitoring_interval_unit: Seconds
+    enable_file_logging: false
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .gzip
+
+  - service_id: 3
+    service_name: Metropolitan Portal
+    service_host: portal.mcec.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 3
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .gzip
+
+  - service_id: 4
+    service_name: Safaricom Developer Portal
+    service_host: developer.safaricom.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 5
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Daily
+    archive_format: .zip
+
+  - service_id: 5
+    service_name: KRA iTax Portal
+    service_host: itax.kra.go.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 1
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: true
+    log_archiving_interval: Weekly
+    archive_format: .gzip
+
+  - service_id: 6
+    service_name: NCBA Loop Web
+    service_host: web.loop.co.ke
+    service_port: 443
+    service_resource_uri: /login
+    service_method: GET
+    monitoring_interval: 15
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: false
+    log_archiving_interval: Monthly
+    archive_format: .tar.gz
+
+  - service_id: 7
+    service_name: Stima Sacco Members Portal
+    service_host: mportal.stima-sacco.com
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 10
+    monitoring_interval_unit: Minutes
+    enable_file_logging: false
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .gzip
+
+  - service_id: 8
+    service_name: eCitizen Portal
+    service_host: accounts.ecitizen.go.ke
+    service_port: 443
+    service_resource_uri: /login
+    service_method: POST
+    monitoring_interval: 30
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Daily
+    archive_format: .gzip
+
+  - service_id: 9
+    service_name: Kenya Power Self Service
+    service_host: selfservice.kplc.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 2
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: true
+    log_archiving_interval: Weekly
+    archive_format: .zip
+
+  - service_id: 10
+    service_name: Equity Bank Online EquityDirect
+    service_host: equitydirect.equitybankgroup.com
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 10
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Daily
+    archive_format: .gzip
+
+  - service_id: 11
+    service_name: Co-op Bank Internet Banking
+    service_host: internetbanking.co-opbank.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 20
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .tar.gz
+
+  - service_id: 12
+    service_name: M-Pesa B2B API Endpoint
+    service_host: api.safaricom.co.ke
+    service_port: 443
+    service_resource_uri: /mpesa/b2b/v1/paymentrequest
+    service_method: POST
+    monitoring_interval: 5
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Hourly
+    archive_format: .gzip
+
+  - service_id: 13
+    service_name: NHIF Self Service Portal
+    service_host: selfservice.nhif.or.ke
+    service_port: 443
+    service_resource_uri: /site/login
+    service_method: GET
+    monitoring_interval: 15
+    monitoring_interval_unit: Minutes
+    enable_file_logging: false
+    file_logging_interval: Monthly
+    enable_logs_archiving: false
+    log_archiving_interval: Monthly
+    archive_format: .zip
+
+  - service_id: 14
+    service_name: Central Bank of Kenya Website
+    service_host: www.centralbank.go.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: HEAD
+    monitoring_interval: 30
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: true
+    log_archiving_interval: Monthly
+    archive_format: .gzip
+
+  - service_id: 15
+    service_name: Absa Bank Kenya Internet Banking
+    service_host: ib.absabank.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 15
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Weekly
+    archive_format: .tar.gz
+
+  - service_id: 16
+    service_name: Stanbic Bank Kenya Portal
+    service_host: www.stanbicbank.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 5
+    monitoring_interval_unit: Minutes
+    enable_file_logging: false
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .zip
+
+  - service_id: 17
+    service_name: Tower Sacco Web Portal
+    service_host: portal.towersacco.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 12
+    monitoring_interval_unit: Hours
+    enable_file_logging: true
+    file_logging_interval: Weekly
+    enable_logs_archiving: true
+    log_archiving_interval: Monthly
+    archive_format: .gzip
+
+  - service_id: 18
+    service_name: Imarika Sacco Portal
+    service_host: portal.imarika.org
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 10
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .zip
+
+  - service_id: 19
+    service_name: University of Nairobi Student Portal
+    service_host: smis.uonbi.ac.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 20
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: true
+    log_archiving_interval: Weekly
+    archive_format: .gzip
+
+  - service_id: 20
+    service_name: Kenyatta University Student Portal
+    service_host: portal.ku.ac.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 15
+    monitoring_interval_unit: Minutes
+    enable_file_logging: false
+    file_logging_interval: Daily
+    enable_logs_archiving: false
+    log_archiving_interval: Weekly
+    archive_format: .zip
+
+  - service_id: 21
+    service_name: Jumia Kenya Home
+    service_host: www.jumia.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 45
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Daily
+    archive_format: .gzip
+
+  - service_id: 22
+    service_name: Safaricom Cloud Services
+    service_host: cloud.safaricom.co.ke
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 1
+    monitoring_interval_unit: Minutes
+    enable_file_logging: true
+    file_logging_interval: Daily
+    enable_logs_archiving: true
+    log_archiving_interval: Weekly
+    archive_format: .tar.gz
+
+  - service_id: 23
+    service_name: KCB Bank Internet Banking
+    service_host: onlinebanking.kcbgroup.com
+    service_port: 443
+    service_resource_uri: /
+    service_method: GET
+    monitoring_interval: 10
+    monitoring_interval_unit: Seconds
+    enable_file_logging: true
+    file_logging_interval: Hourly
+    enable_logs_archiving: true
+    log_archiving_interval: Daily
+    archive_format: .gzip

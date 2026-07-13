@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+    <title>Sentinel - Monitoring Dashboard</title>
+    <meta content="Sentinel service and server availability monitoring dashboard with real-time SSE updates."
+          name="description"/>
+
+    <link href="/static/skyworld_logo_favicon.png" rel="icon" type="image/png"/>
+    <link href="/static/skyworld_logo_favicon.png" rel="shortcut icon"/>
+    <link href="/static/skyworld_logo_big.png" rel="apple-touch-icon"/>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+
+        :root {
+
+            --c-blue: #58a6ff;
+            --c-green: #3fb950;
+            --c-red: #f85149;
+            --c-amber: #d29922;
+
+            --sidebar-w: 220px;
+            --topbar-h: 48px;
+        }
+
+        [data-theme="dark"] {
+            --bg-base: #0d1117;
+            --bg-surface: #161b22;
+            --bg-raised: #161b22;
+            --bg-hover: #1c2128;
+            --bg-active: #21262d;
+            --border: #30363d;
+            --border-light: #21262d;
+            --text-primary: #c9d1d9;
+            --text-muted: #8b949e;
+            --text-faint: #484f58;
+            --sidebar-bg: #010409;
+            --topbar-bg: #010409;
+            --card-bg: #161b22;
+            --table-stripe: #131720;
+        }
+
+        [data-theme="light"] {
+            --bg-base: #f6f8fa;
+            --bg-surface: #ffffff;
+            --bg-raised: #f6f8fa;
+            --bg-hover: #f0f2f4;
+            --bg-active: #eaeef2;
+            --border: #d0d7de;
+            --border-light: #eaeef2;
+            --text-primary: #1f2328;
+            --text-muted: #656d76;
+            --text-faint: #afb8c1;
+            --sidebar-bg: #ffffff;
+            --topbar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --table-stripe: #f6f8fa;
+        }
+
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            display: grid;
+            grid-template-columns:var(--sidebar-w) 1fr;
+            grid-template-rows:var(--topbar-h) 1fr;
+            grid-template-areas:"topbar topbar" "sidebar main";
+            min-height: 100vh;
+            transition: background .2s, color .2s;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            background: none
+        }
+
+        input, select {
+            font-family: inherit
+        }
+
+        ul {
+            list-style: none
+        }
+
+        .mono {
+            font-family: 'Courier New', monospace
+        }
+
+        #topbar {
+            grid-area: topbar;
+            background: var(--topbar-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+            z-index: 200;
+            position: sticky;
+            top: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: var(--sidebar-w);
+            padding-left: 4px;
+            flex-shrink: 0;
+
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        #status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .2px;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--c-green);
+            box-shadow: 0 0 0 0 rgba(63, 185, 80, .6);
+            animation: pulse-anim 2s infinite;
+            flex-shrink: 0;
+        }
+
+        .pulse-dot.inactive {
+            background: var(--c-red);
+            box-shadow: 0 0 0 0 rgba(248, 81, 73, .6);
+        }
+
+        @keyframes pulse-anim {
+            0% {
+                box-shadow: 0 0 0 0 rgba(63, 185, 80, .6)
+            }
+            70% {
+                box-shadow: 0 0 0 6px rgba(63, 185, 80, 0)
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(63, 185, 80, 0)
+            }
+        }
+
+        .topbar-spacer {
+            flex: 1
+        }
+
+        #clock {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+
+        #theme-toggle {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, color .15s;
+            flex-shrink: 0;
+        }
+
+        #theme-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary)
+        }
+
+        #theme-toggle svg {
+            width: 14px;
+            height: 14px
+        }
+
+        #sidebar {
+            grid-area: sidebar;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 16px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: sticky;
+            top: var(--topbar-h);
+            height: calc(100vh - var(--topbar-h));
+            overflow-y: auto;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text-faint);
+            padding: 8px 10px 4px;
+            font-weight: 600;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: background .15s, color .15s;
+        }
+
+        .nav-link:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary)
+        }
+
+        .nav-link.active {
+            background: var(--bg-active);
+            color: var(--text-primary)
+        }
+
+        .nav-link svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            opacity: .7
+        }
+
+        .nav-link.active svg {
+            opacity: 1
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+
+        #main {
+            grid-area: main;
+            padding: 20px 24px 40px;
+            overflow-y: auto;
+            min-width: 0;
+        }
+
+        .page {
+            display: none
+        }
+
+        .page.active {
+            display: block
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -.2px
+        }
+
+        .page-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background .15s, border-color .15s;
+            border: 1px solid var(--border);
+            background: var(--bg-raised);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--c-blue);
+            color: #0d1117;
+            border-color: var(--c-blue)
+        }
+
+        .btn-primary:hover {
+            opacity: .85
+        }
+
+        .btn-ghost {
+            background: var(--bg-raised);
+            border-color: var(--border);
+            color: var(--text-primary)
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover)
+        }
+
+        .btn-danger {
+            color: var(--c-red);
+            border-color: var(--border)
+        }
+
+        .btn-danger:hover {
+            background: rgba(248, 81, 73, .1)
+        }
+
+        .btn-success {
+            color: var(--c-green);
+            border-color: var(--border)
+        }
+
+        .btn-success:hover {
+            background: rgba(63, 185, 80, .1)
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 11px
+        }
+
+        .btn svg {
+            width: 13px;
+            height: 13px
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 6px
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+            font-family: 'Courier New', monospace
+        }
+
+        .stat-value.blue {
+            color: var(--c-blue)
+        }
+
+        .stat-value.green {
+            color: var(--c-green)
+        }
+
+        .stat-value.red {
+            color: var(--c-red)
+        }
+
+        .stat-value.amber {
+            color: var(--c-amber)
+        }
+
+        .stat-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns:2fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chart-title {
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--text-muted)
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .chart-body {
+            position: relative;
+            height: 140px
+        }
+
+        .donut-box {
+            display: flex;
+            align-items: center;
+            gap: 16px
+        }
+
+        .donut-wrap {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            flex-shrink: 0
+        }
+
+        .donut-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-pct {
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace
+        }
+
+        .donut-lbl {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-weight: 500
+        }
+
+        .donut-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .donut-stat-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px
+        }
+
+        .table-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .table-title {
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0
+        }
+
+        .table-spacer {
+            flex: 1
+        }
+
+        .search-input {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: var(--text-primary);
+            outline: none;
+            width: 200px;
+            transition: border-color .15s;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted)
+        }
+
+        .search-input:focus {
+            border-color: var(--c-blue)
+        }
+
+        .tbl-wrap {
+            overflow-x: auto
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px
+        }
+
+        thead th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            background: var(--bg-raised);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tbody tr {
+            transition: background .12s;
+            cursor: pointer
+        }
+
+        tbody tr:nth-child(even) {
+            background: var(--table-stripe)
+        }
+
+        tbody tr:hover {
+            background: var(--bg-hover)
+        }
+
+        tbody tr.selected {
+            background: var(--bg-active) !important;
+            outline: 1px solid var(--c-blue) inset
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 12px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none
+        }
+
+        .status-text {
+            font-weight: 600;
+            font-size: 11px;
+            letter-spacing: .3px
+        }
+
+        .status-up {
+            color: var(--c-green)
+        }
+
+        .status-down {
+            color: var(--c-red)
+        }
+
+        .status-unknown {
+            color: var(--text-muted)
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: inline-block
+        }
+
+        .dot-up {
+            background: var(--c-green)
+        }
+
+        .dot-down {
+            background: var(--c-red)
+        }
+
+        .dot-unknown {
+            background: var(--text-faint)
+        }
+
+        #detail-panel {
+            position: fixed;
+            top: var(--topbar-h);
+            right: 0;
+            bottom: 0;
+            width: 480px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .2s ease;
+            overflow: hidden;
+        }
+
+        #detail-panel.open {
+            transform: translateX(0)
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600
+        }
+
+        .panel-close {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            background: transparent;
+        }
+
+        .panel-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary)
+        }
+
+        .panel-close svg {
+            width: 14px;
+            height: 14px
+        }
+
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .panel-tab {
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: color .15s, border-color .15s;
+            cursor: pointer;
+        }
+
+        .panel-tab.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--c-blue)
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 18px
+        }
+
+        .panel-pane {
+            display: none
+        }
+
+        .panel-pane.active {
+            display: block
+        }
+
+        .kv-grid {
+            display: grid;
+            grid-template-columns:auto 1fr;
+            gap: 6px 12px;
+            align-items: start
+        }
+
+        .kv-key {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            white-space: nowrap;
+            padding-top: 1px
+        }
+
+        .kv-val {
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            color: var(--text-muted);
+            margin: 16px 0 8px;
+        }
+
+        .section-label:first-child {
+            margin-top: 0
+        }
+
+        .hist-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px
+        }
+
+        .hist-table th {
+            text-align: left;
+            color: var(--text-muted);
+            padding: 4px 6px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .hist-table td {
+            padding: 5px 6px;
+            border-bottom: 1px solid var(--border-light)
+        }
+
+        .hist-table tr:last-child td {
+            border-bottom: none
+        }
+
+        .log-lines {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-up {
+            color: var(--c-green)
+        }
+
+        .log-down {
+            color: var(--c-red)
+        }
+
+        .panel-chart {
+            position: relative;
+            height: 160px;
+            margin-bottom: 16px
+        }
+
+
+        .log-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .log-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .log-card-title {
+            font-size: 12px;
+            font-weight: 600
+        }
+
+        .log-empty {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 24px
+        }
+
+        .cfg-service {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+        }
+
+        .cfg-service-hdr {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .cfg-id-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .system-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .system-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 12px
+        }
+
+        .system-row:last-child {
+            border-bottom: none
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideUp .2s ease;
+            max-width: 320px;
+        }
+
+        .toast.success {
+            border-left: 3px solid var(--c-green)
+        }
+
+        .toast.error {
+            border-left: 3px solid var(--c-red)
+        }
+
+        .toast.info {
+            border-left: 3px solid var(--c-blue)
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px)
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+
+        @media (max-width: 900px) {
+            body {
+                grid-template-columns:0 1fr
+            }
+
+            #sidebar {
+                display: none
+            }
+
+            .chart-row {
+                grid-template-columns:1fr
+            }
+        }
+
+        @media (max-width: 640px) {
+            #main {
+                padding: 14px 12px 32px
+            }
+
+            #detail-panel {
+                width: 100%
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header id="topbar">
+    <div class="logo">
+        <img
+                alt="Sentinel"
+                class="logo-icon"
+                height="24"
+                src="/static/skyworld_logo_small.png"
+                width="24"
+        >
+        <span>Sentinel</span>
+    </div>
+
+    <div id="status-pill">
+        <span class="pulse-dot" id="status-dot"></span>
+        <span id="status-text">Monitoring</span>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <div id="clock">--:--:--</div>
+
+    <button aria-label="Toggle theme" id="theme-toggle" title="Toggle theme">
+        <svg fill="currentColor" id="icon-moon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+        <svg fill="currentColor" id="icon-sun" style="display:none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"/>
+            <line stroke="currentColor" stroke-width="2" x1="12" x2="12" y1="1" y2="3"/>
+            <line stroke="currentColor" stroke-width="2" x1="12" x2="12" y1="21" y2="23"/>
+            <line stroke="currentColor" stroke-width="2" x1="4.22" x2="5.64" y1="4.22" y2="5.64"/>
+            <line stroke="currentColor" stroke-width="2" x1="18.36" x2="19.78" y1="18.36" y2="19.78"/>
+            <line stroke="currentColor" stroke-width="2" x1="1" x2="3" y1="12" y2="12"/>
+            <line stroke="currentColor" stroke-width="2" x1="21" x2="23" y1="12" y2="12"/>
+            <line stroke="currentColor" stroke-width="2" x1="4.22" x2="5.64" y1="19.78" y2="18.36"/>
+            <line stroke="currentColor" stroke-width="2" x1="18.36" x2="19.78" y1="5.64" y2="4.22"/>
+        </svg>
+    </button>
+</header>
+
+<nav id="sidebar">
+    <div class="nav-section-label">Monitoring</div>
+    <a class="nav-link active" data-page="dashboard" href="#" id="nav-dashboard">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="7" width="7" x="3" y="3"/>
+            <rect height="7" width="7" x="14" y="3"/>
+            <rect height="7" width="7" x="14" y="14"/>
+            <rect height="7" width="7" x="3" y="14"/>
+        </svg>
+        Dashboard
+    </a>
+    <a class="nav-link" data-page="services" href="#" id="nav-services">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Services
+        <span class="nav-badge" id="sidebar-badge">0</span>
+    </a>
+    <a class="nav-link" data-page="logs" href="#" id="nav-logs">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" x2="8" y1="13" y2="13"/>
+            <line x1="16" x2="8" y1="17" y2="17"/>
+        </svg>
+        Logs
+    </a>
+
+    <div class="nav-section-label">Administration</div>
+    <a class="nav-link" data-page="config" href="#" id="nav-config">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        Configuration
+    </a>
+    <a class="nav-link" data-page="system" href="#" id="nav-system">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect height="14" rx="2" width="20" x="2" y="3"/>
+            <line x1="8" x2="16" y1="21" y2="21"/>
+            <line x1="12" x2="12" y1="17" y2="21"/>
+        </svg>
+        System
+    </a>
+
+    <div class="sidebar-footer">
+        <div class="nav-link" style="cursor:default;gap:6px;font-size:11px;color:var(--text-faint)">
+            <svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" x2="12" y1="8" y2="12"/>
+                <line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+            Sentinel v1.0
+        </div>
+    </div>
+</nav>
+
+<main id="main">
+
+    <div class="page active" id="page-dashboard">
+        <div class="page-header">
+            <div>
+                <div class="page-title">Dashboard</div>
+                <div class="page-subtitle">Real-time service &amp; server availability</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-danger btn-sm" id="btn-stop">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <rect height="12" width="12" x="6" y="6"/>
+                    </svg>
+                    Stop
+                </button>
+                <button class="btn btn-success btn-sm" id="btn-start">
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Start
+                </button>
+                <button class="btn btn-ghost btn-sm" id="btn-reload">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                    </svg>
+                    Reload Config
+                </button>
+            </div>
+        </div>
+
+        <!-- stat cards -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Services</div>
+                <div class="stat-value" id="s-total">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Apps Online</div>
+                <div class="stat-value green" id="s-app-up">0</div>
+                <div class="stat-sub" id="s-app-pct">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Apps Offline</div>
+                <div class="stat-value red" id="s-app-down">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Servers Reachable</div>
+                <div class="stat-value blue" id="s-srv-up">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Servers Unreachable</div>
+                <div class="stat-value amber" id="s-srv-down">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Jobs</div>
+                <div class="stat-value" id="s-jobs">0</div>
+            </div>
+        </div>
+
+        <!-- chart row -->
+        <div class="chart-row">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-title">Response Time (ms) - last 20 checks</span>
+                    <div class="chart-legend" id="rt-legend"></div>
+                </div>
+                <div class="chart-body">
+                    <canvas id="chart-response"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><span class="chart-title">Availability</span></div>
+                <div class="donut-box">
+                    <div class="donut-wrap">
+                        <canvas id="chart-avail"></canvas>
+                        <div class="donut-center">
+                            <div class="donut-pct" id="avail-pct">-</div>
+                            <div class="donut-lbl">UPTIME</div>
+                        </div>
+                    </div>
+                    <div class="donut-stats">
+                        <div class="donut-stat-row"><span class="legend-dot"
+                                                          style="background:var(--c-green)"></span><span>Apps up: <strong
+                                id="d-app-up">0</strong></span></div>
+                        <div class="donut-stat-row"><span class="legend-dot"
+                                                          style="background:var(--c-red)"></span><span>Apps down: <strong
+                                id="d-app-dn">0</strong></span></div>
+                        <div class="donut-stat-row"><span class="legend-dot"
+                                                          style="background:var(--c-blue)"></span><span>Srvs up: <strong
+                                id="d-srv-up">0</strong></span></div>
+                        <div class="donut-stat-row"><span class="legend-dot"
+                                                          style="background:var(--c-amber)"></span><span>Srvs down: <strong
+                                id="d-srv-dn">0</strong></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- services table -->
+        <div class="table-card">
+            <div class="table-toolbar">
+                <span class="table-title">Services</span>
+                <span class="table-spacer"></span>
+                <input class="search-input" id="svc-search" placeholder="Search services…" type="text"/>
+            </div>
+            <div class="tbl-wrap">
+                <table id="svc-table">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Host</th>
+                        <th>Port</th>
+                        <th>App Status</th>
+                        <th>Server Status</th>
+                        <th>Response</th>
+                        <th>Last Checked</th>
+                        <th>Interval</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="svc-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-services">
+        <div class="page-header">
+            <div>
+                <div class="page-title">Services</div>
+                <div class="page-subtitle">All configured services</div>
+            </div>
+        </div>
+        <div class="table-card">
+            <div class="table-toolbar">
+                <span class="table-title">All Services</span>
+                <span class="table-spacer"></span>
+                <input class="search-input" id="svc-search2" placeholder="Search…" type="text"/>
+            </div>
+            <div class="tbl-wrap">
+                <table id="svc-table2">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Host</th>
+                        <th>Port</th>
+                        <th>App Status</th>
+                        <th>Server Status</th>
+                        <th>Response</th>
+                        <th>Last Checked</th>
+                        <th>Interval</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="svc-tbody2"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-logs">
+        <div class="page-header">
+            <div>
+                <div class="page-title">Logs</div>
+                <div class="page-subtitle">Recent entries per service</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-refresh-logs">↻ Refresh</button>
+        </div>
+        <div id="logs-container">
+            <div class="log-empty">Loading logs…</div>
+        </div>
+    </div>
+
+    <div class="page" id="page-config">
+        <div class="page-header">
+            <div>
+                <div class="page-title">Configuration</div>
+                <div class="page-subtitle">Current service configuration</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-reload-cfg">↻ Reload</button>
+        </div>
+        <div id="config-container">
+            <div class="log-empty">Loading…</div>
+        </div>
+    </div>
+
+    <div class="page" id="page-system">
+        <div class="page-header">
+            <div>
+                <div class="page-title">System</div>
+                <div class="page-subtitle">Runtime information</div>
+            </div>
+        </div>
+        <div class="system-card">
+            <div class="system-row"><span>Application</span><strong>Sentinel</strong></div>
+            <div class="system-row"><span>Version</span><span class="mono">v1.0.0</span></div>
+            <div class="system-row"><span>HTTP Port</span><span class="mono">8080</span></div>
+            <div class="system-row"><span>SSE Endpoint</span><span class="mono">GET /api/events</span></div>
+            <div class="system-row"><span>State File</span><span class="mono">sentinel_state.json</span></div>
+            <div class="system-row"><span>Log Directory</span><span class="mono">logs/</span></div>
+            <div class="system-row"><span>Browser Time</span><span class="mono" id="sys-clock">-</span></div>
+            <div class="system-row"><span>Last SSE event</span><span class="mono" id="sys-last-event">-</span></div>
+        </div>
+    </div>
+
+</main>
+
+<aside id="detail-panel">
+    <div class="panel-header">
+        <span class="panel-title" id="panel-svc-name">Service</span>
+        <button aria-label="Close panel" class="panel-close" id="panel-close-btn">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <line x1="18" x2="6" y1="6" y2="18"/>
+                <line x1="6" x2="18" y1="6" y2="18"/>
+            </svg>
+        </button>
+    </div>
+    <div class="panel-tabs">
+        <div class="panel-tab active" data-tab="overview">Overview</div>
+        <div class="panel-tab" data-tab="history">History</div>
+        <div class="panel-tab" data-tab="logs">Logs</div>
+        <div class="panel-tab" data-tab="config">Config</div>
+    </div>
+    <div class="panel-body">
+        <div class="panel-pane active" id="pane-overview">
+            <div class="section-label">Status</div>
+            <div class="kv-grid" id="pov-status"></div>
+            <div class="section-label">Response Time</div>
+            <div class="panel-chart">
+                <canvas id="chart-panel-rt"></canvas>
+            </div>
+        </div>
+        <div class="panel-pane" id="pane-history">
+            <table class="hist-table">
+                <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>App</th>
+                    <th>Server</th>
+                    <th>ms</th>
+                </tr>
+                </thead>
+                <tbody id="panel-hist-body"></tbody>
+            </table>
+        </div>
+        <div class="panel-pane" id="pane-logs">
+            <div class="log-lines" id="panel-log-lines">Loading…</div>
+        </div>
+        <div class="panel-pane" id="pane-config">
+            <div class="kv-grid" id="pov-config"></div>
+        </div>
+    </div>
+</aside>
+
+<div id="toast-container"></div>
+
+<script>
+
+    const state = {
+        services: [],
+        summary: {},
+        history: {},
+        selectedId: null,
+        panelTab: 'overview',
+        page: 'dashboard',
+    };
+
+    const charts = {response: null, avail: null, panelRt: null};
+
+
+    const $ = id => document.getElementById(id);
+    const $$ = sel => document.querySelectorAll(sel);
+
+    function tickClock() {
+        const now = new Date();
+        const ts = now.toLocaleTimeString('en-US', {hour12: false});
+        $('clock').textContent = ts;
+        $('sys-clock').textContent = now.toISOString();
+    }
+
+    setInterval(tickClock, 1000);
+    tickClock();
+
+
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        $('icon-moon').style.display = t === 'dark' ? '' : 'none';
+        $('icon-sun').style.display = t === 'light' ? '' : 'none';
+        localStorage.setItem('sentinel-theme', t);
+        // Update chart colors
+        if (typeof charts !== 'undefined') {
+            Object.values(charts).forEach(c => {
+                if (c) {
+                    c.options.scales && (c.options.scales.x.grid.color = gridColor());
+                    c.update('none');
+                }
+            });
+        }
+    }
+
+    function gridColor() {
+        return getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+    }
+
+    const savedTheme = localStorage.getItem('sentinel-theme') || 'dark';
+    applyTheme(savedTheme);
+    $('theme-toggle').addEventListener('click', () => {
+        const curr = document.documentElement.getAttribute('data-theme');
+        applyTheme(curr === 'dark' ? 'light' : 'dark');
+    });
+
+    function showPage(name) {
+        state.page = name;
+        $$('.page').forEach(p => p.classList.remove('active'));
+        $$('.nav-link').forEach(l => l.classList.remove('active'));
+        const pg = $('page-' + name);
+        if (pg) pg.classList.add('active');
+        const lk = $('nav-' + name);
+        if (lk) lk.classList.add('active');
+        if (name === 'logs') loadAllLogs();
+        if (name === 'config') loadConfig();
+    }
+
+    $$('.nav-link[data-page]').forEach(el => {
+        el.addEventListener('click', e => {
+            e.preventDefault();
+            showPage(el.dataset.page);
+        });
+    });
+
+    const PALETTE = ['#58a6ff', '#3fb950', '#d29922', '#f85149', '#8b949e'];
+
+
+    function initCharts() {
+        const gc = gridColor();
+        const fontColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+
+        charts.response = new Chart($('chart-response'), {
+            type: 'line',
+            data: {labels: [], datasets: []},
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: {duration: 200},
+                interaction: {mode: 'index', intersect: false},
+                plugins: {legend: {display: false}, tooltip: {bodyFont: {family: 'Courier New'}}},
+                scales: {
+                    x: {
+                        grid: {color: gc},
+                        ticks: {color: fontColor, font: {size: 10, family: 'Courier New'}, maxTicksLimit: 8}
+                    },
+                    y: {
+                        grid: {color: gc},
+                        ticks: {color: fontColor, font: {size: 10, family: 'Courier New'}},
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        charts.avail = new Chart($('chart-avail'), {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [0, 1],
+                    backgroundColor: ['#3fb950', '#21262d'],
+                    borderWidth: 0,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {legend: {display: false}, tooltip: {enabled: false}}
+            }
+        });
+
+        charts.panelRt = new Chart($('chart-panel-rt'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'ms',
+                    data: [],
+                    borderColor: '#58a6ff',
+                    backgroundColor: 'rgba(88,166,255,.1)',
+                    tension: .4,
+                    fill: true,
+                    pointRadius: 2,
+                    borderWidth: 1.5
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: {duration: 200},
+                plugins: {legend: {display: false}, tooltip: {bodyFont: {family: 'Courier New'}}},
+                scales: {
+                    x: {
+                        grid: {color: gc},
+                        ticks: {color: fontColor, font: {size: 10, family: 'Courier New'}, maxTicksLimit: 8}
+                    },
+                    y: {
+                        grid: {color: gc},
+                        ticks: {color: fontColor, font: {size: 10, family: 'Courier New'}},
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    initCharts();
+
+    function updateResponseChart() {
+        if (!charts.response) return;
+        const svc = state.services;
+        if (!svc.length) return;
+
+        const kept = svc.slice(0, 5);
+        const allLabels = new Set();
+        kept.forEach(s => {
+            const h = state.history[s.id] || [];
+            h.slice(-20).forEach(r => allLabels.add(r.checked_at));
+        });
+        const labels = [...allLabels].sort().slice(-20).map(t => {
+            const d = new Date(t);
+            return d.toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        });
+        const datasets = kept.map((s, i) => {
+            const h = (state.history[s.id] || []).slice(-20);
+            const pts = labels.map(lbl => {
+                const rec = h.find(r => {
+                    const d = new Date(r.checked_at);
+                    return d.toLocaleTimeString('en-US', {
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }) === lbl;
+                });
+                return rec ? rec.response_time / 1e6 : null;  // ns → ms
+            });
+            return {
+                label: s.name,
+                data: pts,
+                borderColor: PALETTE[i % PALETTE.length],
+                backgroundColor: PALETTE[i % PALETTE.length] + '20',
+                tension: .4, fill: false, borderWidth: 1.5, pointRadius: 2,
+            };
+        });
+
+        charts.response.data.labels = labels;
+        charts.response.data.datasets = datasets;
+        charts.response.update('none');
+
+        // legend
+        const leg = $('rt-legend');
+        leg.innerHTML = datasets.map((d, i) =>
+            `<div class="legend-item"><div class="legend-dot" style="background:${PALETTE[i % PALETTE.length]}"></div>${d.label}</div>`
+        ).join('');
+    }
+
+    function updateAvailChart(appUp, appDown, srvUp, srvDown) {
+        if (!charts.avail) return;
+        const total = appUp + appDown;
+        const pct = total > 0 ? Math.round(appUp / total * 100) : 0;
+        charts.avail.data.datasets[0].data = [appUp, Math.max(appDown, 0)];
+        charts.avail.data.datasets[0].backgroundColor = ['#3fb950', getComputedStyle(document.documentElement).getPropertyValue('--bg-active').trim()];
+        charts.avail.update('none');
+        $('avail-pct').textContent = pct + '%';
+        $('d-app-up').textContent = appUp;
+        $('d-app-dn').textContent = appDown;
+        $('d-srv-up').textContent = srvUp;
+        $('d-srv-dn').textContent = srvDown;
+    }
+
+    function updateStatCards(s) {
+        $('s-total').textContent = s.total_services || 0;
+        $('s-app-up').textContent = s.application_up || 0;
+        $('s-app-down').textContent = s.application_down || 0;
+        $('s-srv-up').textContent = s.server_up || 0;
+        $('s-srv-down').textContent = s.server_down || 0;
+        $('s-jobs').textContent = s.total_services || 0;
+        const t = s.total_services || 0;
+        const u = s.application_up || 0;
+        $('s-app-pct').textContent = t ? Math.round(u / t * 100) + '% uptime' : '-';
+        updateAvailChart(s.application_up || 0, s.application_down || 0, s.server_up || 0, s.server_down || 0);
+        $('sidebar-badge').textContent = t;
+    }
+
+    function statusBadge(v) {
+        if (v === 'UP') return `<span class="status-text status-up">● UP</span>`;
+        if (v === 'DOWN') return `<span class="status-text status-down">● DOWN</span>`;
+        return `<span class="status-text status-unknown">UNKNOWN</span>`;
+    }
+
+    function dotFor(v) {
+        if (v === 'UP') return `<span class="status-dot dot-up"></span>`;
+        if (v === 'DOWN') return `<span class="status-dot dot-down"></span>`;
+        return `<span class="status-dot dot-unknown"></span>`;
+    }
+
+    function fmtTime(iso) {
+        if (!iso || iso.startsWith('0001')) return '-';
+        return new Date(iso).toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    function fmtMs(ms) {
+        if (!ms && ms !== 0) return '-';
+        return ms + ' ms';
+    }
+
+    function buildRow(svc) {
+        const sel = state.selectedId === svc.id ? 'selected' : '';
+        return `<tr id="row-${svc.id}" class="${sel}" data-id="${svc.id}">
+    <td>${dotFor(svc.application_status)}</td>
+    <td class="mono">${svc.id}</td>
+    <td style="font-weight:500">${escHtml(svc.name)}</td>
+    <td class="mono">${escHtml(svc.host)}</td>
+    <td class="mono">${svc.port}</td>
+    <td>${statusBadge(svc.application_status)}</td>
+    <td>${statusBadge(svc.server_status)}</td>
+    <td class="mono">${fmtMs(svc.response_time_ms)}</td>
+    <td style="color:var(--text-muted)">${fmtTime(svc.last_checked)}</td>
+    <td style="color:var(--text-muted)">${escHtml(svc.monitoring_interval)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="checkNow(${svc.id},event)">Check</button></td>
+  </tr>`;
+    }
+
+    function renderTable(tbodyId, filter) {
+        const tbody = $(tbodyId);
+        if (!tbody) return;
+        const q = (filter || '').toLowerCase();
+        const rows = state.services
+            .filter(s => !q || s.name.toLowerCase().includes(q) || s.host.toLowerCase().includes(q) || String(s.id).includes(q))
+            .map(buildRow).join('');
+        tbody.innerHTML = rows || `<tr><td colspan="11" style="text-align:center;color:var(--text-muted);padding:24px">No services configured</td></tr>`;
+        // re-attach row click listeners
+        tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+            tr.addEventListener('click', e => {
+                if (e.target.tagName === 'BUTTON') return;
+                openPanel(parseInt(tr.dataset.id));
+            });
+        });
+    }
+
+    function refreshTables() {
+        renderTable('svc-tbody', $('svc-search').value);
+        renderTable('svc-tbody2', $('svc-search2') ? $('svc-search2').value : '');
+    }
+
+    $('svc-search').addEventListener('input', () => renderTable('svc-tbody', $('svc-search').value));
+    const ss2 = $('svc-search2');
+    if (ss2) ss2.addEventListener('input', () => renderTable('svc-tbody2', ss2.value));
+
+    function openPanel(id) {
+        state.selectedId = id;
+        const svc = state.services.find(s => s.id === id);
+        if (!svc) return;
+        $('panel-svc-name').textContent = svc.name;
+        // mark row selected
+        $$('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+        const row = $('row-' + id);
+        if (row) row.classList.add('selected');
+        $('detail-panel').classList.add('open');
+        renderPanelTab();
+        loadPanelHistory(id);
+        loadPanelLogs(id);
+    }
+
+    $('panel-close-btn').addEventListener('click', () => {
+        $('detail-panel').classList.remove('open');
+        state.selectedId = null;
+        $$('tbody tr.selected').forEach(r => r.classList.remove('selected'));
+    });
+    $$('.panel-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            $$('.panel-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            state.panelTab = tab.dataset.tab;
+            renderPanelTab();
+        });
+    });
+
+    function renderPanelTab() {
+        $$('.panel-pane').forEach(p => p.classList.remove('active'));
+        $('pane-' + state.panelTab)?.classList.add('active');
+        if (state.panelTab === 'overview') refreshPanelOverview();
+        if (state.panelTab === 'config') refreshPanelConfig();
+    }
+
+    function refreshPanelOverview() {
+        const id = state.selectedId;
+        if (!id) return;
+        const svc = state.services.find(s => s.id === id);
+        if (!svc) return;
+        $('pov-status').innerHTML = `
+    <div class="kv-key">App Status</div><div class="kv-val">${statusBadge(svc.application_status)}</div>
+    <div class="kv-key">Server Status</div><div class="kv-val">${statusBadge(svc.server_status)}</div>
+    <div class="kv-key">Last Checked</div><div class="kv-val">${fmtTime(svc.last_checked)}</div>
+    <div class="kv-key">Response</div><div class="kv-val">${fmtMs(svc.response_time_ms)}</div>
+    <div class="kv-key">Next Check</div><div class="kv-val">${fmtTime(svc.next_check)}</div>
+  `;
+        // panel response-time chart
+        const h = (state.history[id] || []).slice(-20);
+        const labels = h.map(r => fmtTime(r.checked_at));
+        const data = h.map(r => r.response_time ? r.response_time / 1e6 : 0);
+        charts.panelRt.data.labels = labels;
+        charts.panelRt.data.datasets[0].data = data;
+        charts.panelRt.update('none');
+    }
+
+    function refreshPanelConfig() {
+        const id = state.selectedId;
+        if (!id) return;
+        const svc = state.services.find(s => s.id === id);
+        if (!svc) return;
+        const keys = ['id', 'name', 'host', 'port', 'monitoring_interval', 'last_checked', 'next_check'];
+        const map = {
+            id: svc.id, name: svc.name, host: svc.host, port: svc.port,
+            monitoring_interval: svc.monitoring_interval,
+            last_checked: svc.last_checked, next_check: svc.next_check
+        };
+        $('pov-config').innerHTML = Object.entries(map).map(([k, v]) =>
+            `<div class="kv-key">${k}</div><div class="kv-val">${escHtml(String(v ?? '-'))}</div>`
+        ).join('');
+    }
+
+    async function loadPanelHistory(id) {
+        try {
+            const r = await fetch(`/api/history/${id}`);
+            const h = await r.json();
+            state.history[id] = h || [];
+            const tbody = $('panel-hist-body');
+            if (!tbody) return;
+            tbody.innerHTML = (state.history[id] || []).slice(-50).reverse().map(rec => `
+      <tr>
+        <td>${fmtTime(rec.checked_at)}</td>
+        <td>${statusBadge(rec.application_status)}</td>
+        <td>${statusBadge(rec.server_status)}</td>
+        <td class="mono">${rec.response_time ? (rec.response_time / 1e6).toFixed(1) : '-'}</td>
+      </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No history</td></tr>';
+            updateResponseChart();
+            if (state.panelTab === 'overview') refreshPanelOverview();
+        } catch {
+        }
+    }
+
+    async function loadPanelLogs(id) {
+        try {
+            const r = await fetch(`/api/logs/${id}`);
+            const j = await r.json();
+            const lines = (j.lines || []);
+            const el = $('panel-log-lines');
+            if (!el) return;
+            if (!lines.length) {
+                el.textContent = 'No log entries found.';
+                return;
+            }
+            el.innerHTML = lines.map(l => {
+                const cls = l.includes('application=UP') || l.includes('server=UP') ? 'log-up' :
+                    l.includes('application=DOWN') || l.includes('server=DOWN') ? 'log-down' : '';
+                return `<span class="${cls}">${escHtml(l)}</span>`;
+            }).join('\n');
+        } catch {
+        }
+    }
+
+    async function loadServices() {
+        try {
+            const r = await fetch('/api/services');
+            const list = await r.json();
+            state.services = list || [];
+            refreshTables();
+        } catch (e) {
+            console.warn('loadServices:', e);
+        }
+    }
+
+    async function loadStatus() {
+        try {
+            const r = await fetch('/api/status');
+            state.summary = await r.json();
+            updateStatCards(state.summary);
+        } catch {
+        }
+    }
+
+    async function loadAllLogs() {
+        const el = $('logs-container');
+        el.innerHTML = '<div class="log-empty">Loading…</div>';
+        const svcs = state.services;
+        if (!svcs.length) {
+            el.innerHTML = '<div class="log-empty">No services configured.</div>';
+            return;
+        }
+        const html = [];
+        for (const svc of svcs) {
+            try {
+                const r = await fetch(`/api/logs/${svc.id}`);
+                const j = await r.json();
+                const lines = (j.lines || []).slice(-20);
+                html.push(`<div class="log-card">
+        <div class="log-card-header"><div class="log-card-title">${escHtml(svc.name)} <span style="color:var(--text-muted);font-weight:400">- Service ${svc.id}</span></div></div>
+        <div class="log-lines">${lines.length ? lines.map(l => {
+                    const c = l.includes('=UP') ? 'log-up' : l.includes('=DOWN') ? 'log-down' : '';
+                    return `<span class="${c}">${escHtml(l)}</span>`;
+                }).join('\n') : '<span style="color:var(--text-muted)">No recent log entries.</span>'}</div>
+      </div>`);
+            } catch {
+                html.push(`<div class="log-card"><div class="log-card-title">Service ${svc.id}</div><div class="log-empty">Could not load logs.</div></div>`);
+            }
+        }
+        el.innerHTML = html.join('');
+    }
+
+    async function loadConfig() {
+        const el = $('config-container');
+        el.innerHTML = '<div class="log-empty">Loading…</div>';
+        try {
+            const r = await fetch('/api/config');
+            const services = await r.json();
+            el.innerHTML = services.map(svc => `
+      <div class="cfg-service">
+        <div class="cfg-service-hdr">
+          <span class="cfg-id-badge">ID ${svc.service_id}</span>
+          <span style="font-weight:600">${escHtml(svc.service_name || svc.name || '')}</span>
+        </div>
+        <div class="kv-grid">
+          <div class="kv-key">Host</div><div class="kv-val">${escHtml(svc.service_host || svc.host || '')}</div>
+          <div class="kv-key">Port</div><div class="kv-val">${svc.service_port || svc.port}</div>
+          <div class="kv-key">Resource URI</div><div class="kv-val">${escHtml(svc.service_resource_uri || svc.resource_uri || '/')}</div>
+          <div class="kv-key">Method</div><div class="kv-val">${svc.service_method || svc.method || 'GET'}</div>
+          <div class="kv-key">Interval</div><div class="kv-val">${svc.monitoring_interval} ${svc.monitoring_interval_unit}</div>
+          <div class="kv-key">File Logging</div><div class="kv-val">${svc.enable_file_logging ?? svc.EnableFileLogging ?? '-'}</div>
+          <div class="kv-key">Log Interval</div><div class="kv-val">${svc.file_logging_interval || svc.FileLoggingInterval || '-'}</div>
+          <div class="kv-key">Archiving</div><div class="kv-val">${svc.enable_logs_archiving ?? svc.EnableLogsArchiving ?? '-'}</div>
+          <div class="kv-key">Archive Format</div><div class="kv-val">${svc.archive_format || svc.ArchiveFormat || '-'}</div>
+        </div>
+      </div>`).join('');
+        } catch {
+            el.innerHTML = '<div class="log-empty">Failed to load configuration.</div>';
+        }
+    }
+
+    $('btn-stop').addEventListener('click', async () => {
+        try {
+            await fetch('/api/stop', {method: 'POST'});
+            toast('Monitoring stopped', 'info');
+        } catch {
+            toast('Error stopping monitoring', 'error');
+        }
+    });
+    $('btn-start').addEventListener('click', async () => {
+        try {
+            await fetch('/api/start', {method: 'POST'});
+            toast('Monitoring started', 'success');
+        } catch {
+            toast('Error starting monitoring', 'error');
+        }
+    });
+    $('btn-reload').addEventListener('click', async () => {
+        try {
+            const r = await fetch('/api/config/reload', {method: 'POST'});
+            const j = await r.json();
+            toast('Config reloaded', 'success');
+            await loadServices();
+            await loadStatus();
+        } catch {
+            toast('Error reloading config', 'error');
+        }
+    });
+    const btnRefreshLogs = $('btn-refresh-logs');
+    if (btnRefreshLogs) btnRefreshLogs.addEventListener('click', loadAllLogs);
+    const btnReloadCfg = $('btn-reload-cfg');
+    if (btnReloadCfg) btnReloadCfg.addEventListener('click', loadConfig);
+
+    async function checkNow(id, e) {
+        if (e) e.stopPropagation();
+        try {
+            const r = await fetch(`/api/check/${id}`, {method: 'POST'});
+            const j = await r.json();
+            toast(`Checked #${id}: App ${j.application_status} / Srv ${j.server_status}`, 'info');
+            await loadServices();
+            await loadStatus();
+            if (state.selectedId === id) {
+                await loadPanelHistory(id);
+                await loadPanelLogs(id);
+            }
+        } catch {
+            toast('Check failed', 'error');
+        }
+    }
+
+    function connectSSE() {
+        const es = new EventSource('/api/events');
+        $('sse-dot').classList.remove('disconnected');
+        $('sse-label').textContent = 'SSE';
+
+        es.onmessage = async ev => {
+            const data = JSON.parse(ev.data);
+            $('sys-last-event').textContent = new Date().toISOString();
+
+            // update the matching service in state
+            const idx = state.services.findIndex(s => s.id === data.service_id);
+            if (idx !== -1) {
+                state.services[idx].application_status = data.application_status;
+                state.services[idx].server_status = data.server_status;
+                state.services[idx].last_checked = data.checked_at;
+                state.services[idx].response_time_ms = data.response_time ? Math.round(data.response_time / 1e6) : 0;
+            }
+            // update row in place
+            const row = $('row-' + data.service_id);
+            if (row && idx !== -1) {
+                const fresh = state.services[idx];
+                const newRow = document.createElement('tbody');
+                newRow.innerHTML = buildRow(fresh);
+                const newTr = newRow.firstElementChild;
+                row.parentNode.replaceChild(newTr, row);
+                newTr.addEventListener('click', e => {
+                    if (e.target.tagName === 'BUTTON') return;
+                    openPanel(parseInt(newTr.dataset.id));
+                });
+                // flash
+                newTr.style.transition = 'none';
+                newTr.style.background = data.application_status === 'UP' ? 'rgba(63,185,80,.12)' : 'rgba(248,81,73,.12)';
+                setTimeout(() => {
+                    newTr.style.transition = 'background .8s';
+                    newTr.style.background = '';
+                }, 50);
+            }
+
+            // refresh summary
+            await loadStatus();
+
+            // if panel open for this service, update it
+            if (state.selectedId === data.service_id) {
+                await loadPanelHistory(data.service_id);
+                await loadPanelLogs(data.service_id);
+                refreshPanelOverview();
+            }
+        };
+
+        es.onerror = () => {
+            $('sse-dot').classList.add('disconnected');
+            $('sse-label').textContent = 'SSE ✕';
+            es.close();
+            // reconnect after 5 s
+            setTimeout(connectSSE, 5000);
+        };
+    }
+
+    connectSSE();
+
+    function toast(msg, type = 'info') {
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = msg;
+        $('toast-container').appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    (async () => {
+        await Promise.all([loadServices(), loadStatus()]);
+        updateResponseChart();
+    })();
+</script>
+</body>
+</html>
