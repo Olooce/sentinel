@@ -255,7 +255,7 @@ func cmdStart(configPath string) error {
 	// Gin engine
 	gin.SetMode(gin.DebugMode)
 	engine := gin.New()
-	engine.Use(api.RequestLogger())
+	engine.Use(gin.Logger())
 
 	// Register REST API routes
 	apiSrv := api.NewServer(st, broker, r.Scheduler(), mgr, hist, lg, defaultLogDir, r)
